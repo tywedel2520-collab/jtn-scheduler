@@ -66,6 +66,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     console.error("LOGIN ERROR:", error);
     return NextResponse.json(
       { error: "Server error", details: error instanceof Error ? error.message : String(error) },
