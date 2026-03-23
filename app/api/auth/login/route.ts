@@ -19,9 +19,8 @@ export async function POST(request: Request) {
     const { prisma } = await import("@/lib/db");
 
     async function findAdminByEmail(email: string): Promise<AdminWithPassword | null> {
-      const adminDelegate = (prisma as unknown as { admin?: { findUnique: Function } }).admin;
-      if (adminDelegate?.findUnique) {
-        const admin = await adminDelegate.findUnique({ where: { email } });
+      try {
+        const admin = await prisma.admin.findUnique({ where: { email } });
         if (!admin) return null;
         return {
           id: admin.id,
@@ -29,13 +28,13 @@ export async function POST(request: Request) {
           name: admin.name,
           password: admin.password,
         };
+      } catch {
+        const rows = await prisma.$queryRawUnsafe<AdminWithPassword[]>(
+          'SELECT id, email, name, password FROM "Admin" WHERE email = $1 LIMIT 1',
+          email
+        );
+        return rows[0] ?? null;
       }
-
-      const rows = await prisma.$queryRawUnsafe<AdminWithPassword[]>(
-        'SELECT id, email, name, password FROM "Admin" WHERE email = ? LIMIT 1',
-        email
-      );
-      return rows[0] ?? null;
     }
 
     const { email, password } = await request.json();
@@ -49,6 +48,7 @@ export async function POST(request: Request) {
     // Role is resolved server-side. Admin stays hidden in UI.
     const admin = await findAdminByEmail(email);
     if (admin) {
+      if (!admin.password) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
       const valid = await bcrypt.compare(password, admin.password);
       if (!valid) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
       await createSession({ role: "admin", userId: admin.id });
@@ -57,6 +57,7 @@ export async function POST(request: Request) {
 
     const client = await findClientByEmail(email);
     if (client) {
+      if (!client.password) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
       const valid = await bcrypt.compare(password, client.password);
       if (!valid) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
       await createSession({ role: "client", userId: client.id });
@@ -64,7 +65,11 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
-  } catch {
-    return NextResponse.json({ error: "Login failed" }, { status: 500 });
+  } catch (error) {
+    console.error("LOGIN ERROR:", error);
+    return NextResponse.json(
+      { error: "Server error", details: error instanceof Error ? error.message : String(error) },
+      { status: 500 }
+    );
   }
 }

@@ -36,7 +36,7 @@ export async function ensureClientAccountsTable() {
       "name" TEXT NOT NULL,
       "password" TEXT NOT NULL,
       "customerId" TEXT,
-      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     )
   `);
 }
@@ -44,7 +44,7 @@ export async function ensureClientAccountsTable() {
 export async function findClientByEmail(email: string): Promise<ClientAccountRow | null> {
   await ensureClientAccountsTable();
   const rows = await prisma.$queryRawUnsafe<ClientAccountRow[]>(
-    'SELECT id, email, name, password, customerId FROM "ClientAccount" WHERE email = ? LIMIT 1',
+    'SELECT id, email, name, password, "customerId" FROM "ClientAccount" WHERE email = $1 LIMIT 1',
     email
   );
   return rows[0] ?? null;
@@ -53,25 +53,24 @@ export async function findClientByEmail(email: string): Promise<ClientAccountRow
 async function findClientById(id: string): Promise<ClientAccountRow | null> {
   await ensureClientAccountsTable();
   const rows = await prisma.$queryRawUnsafe<ClientAccountRow[]>(
-    'SELECT id, email, name, password, customerId FROM "ClientAccount" WHERE id = ? LIMIT 1',
+    'SELECT id, email, name, password, "customerId" FROM "ClientAccount" WHERE id = $1 LIMIT 1',
     id
   );
   return rows[0] ?? null;
 }
 
 async function findAdminById(id: string): Promise<AdminRow | null> {
-  const adminDelegate = (prisma as unknown as { admin?: { findUnique: Function } }).admin;
-  if (adminDelegate?.findUnique) {
-    const admin = await adminDelegate.findUnique({ where: { id } });
+  try {
+    const admin = await prisma.admin.findUnique({ where: { id } });
     if (!admin) return null;
     return { id: admin.id, email: admin.email, name: admin.name };
+  } catch {
+    const rows = await prisma.$queryRawUnsafe<AdminRow[]>(
+      'SELECT id, email, name FROM "Admin" WHERE id = $1 LIMIT 1',
+      id
+    );
+    return rows[0] ?? null;
   }
-
-  const rows = await prisma.$queryRawUnsafe<AdminRow[]>(
-    'SELECT id, email, name FROM "Admin" WHERE id = ? LIMIT 1',
-    id
-  );
-  return rows[0] ?? null;
 }
 
 export async function createSession(input: { role: Role; userId: string }) {
