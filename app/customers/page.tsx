@@ -1,5 +1,5 @@
 "use client";
-
+export const dynamic = "force-dynamic";
 import { useEffect, useState } from "react";
 import { Plus, Mail, Phone, MapPin } from "lucide-react";
 import CustomerModal from "@/components/CustomerModal";
