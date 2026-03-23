@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import JobCalendar from "@/components/JobCalendar";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
