@@ -1,12 +1,15 @@
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
-import { prisma } from "@/lib/db";
-import { createSession, ensureClientAccountsTable, findClientByEmail } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
+    const { prisma } = await import("@/lib/db");
+    const { createSession, ensureClientAccountsTable, findClientByEmail } = await import("@/lib/auth");
+
     const { name, email, password } = await request.json();
     if (!name || !email || !password) {
       return NextResponse.json({ error: "Name, email, and password are required" }, { status: 400 });

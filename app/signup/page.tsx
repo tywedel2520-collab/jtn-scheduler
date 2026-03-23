@@ -1,10 +1,10 @@
 export const dynamic = "force-dynamic";
 
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
 import SignupForm from "@/components/SignupForm";
 
 export default async function SignupPage() {
+  const { getCurrentUser } = await import("@/lib/auth");
   const user = await getCurrentUser();
   if (user) redirect(user.role === "admin" ? "/dashboard" : "/client");
 

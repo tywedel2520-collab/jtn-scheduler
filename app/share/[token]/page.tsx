@@ -1,6 +1,5 @@
 export const dynamic = "force-dynamic";
 
-import { prisma } from "@/lib/db";
 import { format } from "date-fns";
 
 type Props = { params: Promise<{ token: string }> };
@@ -39,6 +38,7 @@ const CHECKLIST_ORDER: Array<keyof ReturnType<typeof parseChecklist>> = [
 ];
 
 export default async function SharePage({ params }: Props) {
+  const { prisma } = await import("@/lib/db");
   const { token } = await params;
 
   const rows = await prisma.$queryRawUnsafe<

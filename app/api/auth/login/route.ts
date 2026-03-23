@@ -1,8 +1,8 @@
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { createSession, findClientByEmail } from "@/lib/auth";
-import { prisma } from "@/lib/db";
 
 
 
@@ -15,6 +15,9 @@ type AdminWithPassword = {
 
 export async function POST(request: Request) {
   try {
+    const { createSession, findClientByEmail } = await import("@/lib/auth");
+    const { prisma } = await import("@/lib/db");
+
     async function findAdminByEmail(email: string): Promise<AdminWithPassword | null> {
       const adminDelegate = (prisma as unknown as { admin?: { findUnique: Function } }).admin;
       if (adminDelegate?.findUnique) {

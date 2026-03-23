@@ -1,8 +1,7 @@
 export const dynamic = "force-dynamic";
+
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/db";
 import { format } from "date-fns";
-import { getCurrentUser } from "@/lib/auth";
 import BrandMark from "@/components/BrandMark";
 import Link from "next/link";
 import SignOutButton from "@/components/SignOutButton";
@@ -35,6 +34,8 @@ function parseChecklist(raw: string) {
 }
 
 export default async function ClientPage() {
+  const { getCurrentUser } = await import("@/lib/auth");
+  const { prisma } = await import("@/lib/db");
   const user = await getCurrentUser();
   if (!user) redirect("/");
   if (user.role === "admin") redirect("/dashboard");

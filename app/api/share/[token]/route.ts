@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
 import { format } from "date-fns";
 
 function parseChecklist(raw: string) {
@@ -34,6 +35,7 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ token: string }> }
 ) {
+  const { prisma } = await import("@/lib/db");
   const { token } = await params;
   const rows = await prisma.$queryRawUnsafe<
     Array<{

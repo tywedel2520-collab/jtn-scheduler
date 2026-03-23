@@ -2,11 +2,11 @@ export const dynamic = "force-dynamic";
 
 import JobCalendar from "@/components/JobCalendar";
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
 import Link from "next/link";
-import { prisma } from "@/lib/db";
 
 export default async function DashboardPage() {
+  const { getCurrentUser } = await import("@/lib/auth");
+  const { prisma } = await import("@/lib/db");
   const user = await getCurrentUser();
   if (!user) redirect("/");
   if (user.role !== "admin") redirect("/client");

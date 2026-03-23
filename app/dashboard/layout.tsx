@@ -1,7 +1,6 @@
 export const dynamic = "force-dynamic";
 
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
 import DashboardNav from "@/components/DashboardNav";
 
 export default async function DashboardLayout({
@@ -9,6 +8,7 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const { getCurrentUser } = await import("@/lib/auth");
   const user = await getCurrentUser();
   if (!user) redirect("/");
   if (user.role === "client") redirect("/client");

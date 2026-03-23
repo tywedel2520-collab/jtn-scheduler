@@ -1,8 +1,8 @@
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import { randomBytes } from "crypto";
-import { prisma } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
 
 function generateShareToken() {
   // Long random URL-safe token (base64url-ish)
@@ -17,6 +17,8 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { getCurrentUser } = await import("@/lib/auth");
+  const { prisma } = await import("@/lib/db");
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (user.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -64,6 +66,8 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { getCurrentUser } = await import("@/lib/auth");
+  const { prisma } = await import("@/lib/db");
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (user.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -85,6 +89,8 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { getCurrentUser } = await import("@/lib/auth");
+  const { prisma } = await import("@/lib/db");
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (user.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });

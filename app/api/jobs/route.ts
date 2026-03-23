@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
 
 const VALID_STATUSES = new Set(["scheduled", "in-progress", "completed", "cancelled"]);
 
@@ -30,6 +30,8 @@ function parseChecklist(raw: string) {
 }
 
 export async function GET() {
+  const { getCurrentUser } = await import("@/lib/auth");
+  const { prisma } = await import("@/lib/db");
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (user.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -62,6 +64,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const { getCurrentUser } = await import("@/lib/auth");
+  const { prisma } = await import("@/lib/db");
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (user.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
