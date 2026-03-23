@@ -161,7 +161,7 @@ export default function JobModal(props: Props) {
     // we can always fetch the active token from the server endpoint.
     if (mode !== "edit" || !isAdmin) return;
     async function loadShareToken() {
-      const res = await fetch(`/api/jobs/${props.job.id}/share`);
+      const res = await fetch(`/api/jobs/${props.job?.id}/share`);
       if (!res.ok) return;
       const data = (await res.json().catch(() => ({}))) as { shareToken?: string | null };
       if (data.shareToken !== undefined) setShareTokenState(data.shareToken);
