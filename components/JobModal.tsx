@@ -34,13 +34,20 @@ type Job = {
   lastUpdatedAt?: string | null;
 };
 
+type BaseProps = {
+  role: "admin";
+  customers: CustomerLite[];
+  // Keep job on the shared shape so props.job access remains valid across the component.
+  job?: Job;
+};
+
 type Props =
   | {
+      role: BaseProps["role"];
+      customers: BaseProps["customers"];
+      job?: BaseProps["job"];
       mode: "create";
-      role: "admin"; 
-      job?: any; 
       initial: { start: Date; end: Date };
-      customers: CustomerLite[];
       onSave: (data: {
         title: string;
         description?: string;
@@ -55,10 +62,10 @@ type Props =
       onClose: () => void;
     }
   | {
-      mode: "edit";
-      role: "admin";
+      role: BaseProps["role"];
+      customers: BaseProps["customers"];
       job: Job;
-      customers: CustomerLite[];
+      mode: "edit";
       onUpdate: (
         id: string,
         data: Partial<{
