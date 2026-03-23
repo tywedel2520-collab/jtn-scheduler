@@ -1,9 +1,10 @@
+export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { createSession, findClientByEmail } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
-export const dynamic = "force-dynamic";
+
 
 type AdminWithPassword = {
   id: string;
