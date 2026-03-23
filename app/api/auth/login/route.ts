@@ -3,6 +3,8 @@ import bcrypt from "bcryptjs";
 import { createSession, findClientByEmail } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 type AdminWithPassword = {
   id: string;
   email: string;
@@ -10,28 +12,28 @@ type AdminWithPassword = {
   password: string;
 };
 
-async function findAdminByEmail(email: string): Promise<AdminWithPassword | null> {
-  const adminDelegate = (prisma as unknown as { admin?: { findUnique: Function } }).admin;
-  if (adminDelegate?.findUnique) {
-    const admin = await adminDelegate.findUnique({ where: { email } });
-    if (!admin) return null;
-    return {
-      id: admin.id,
-      email: admin.email,
-      name: admin.name,
-      password: admin.password,
-    };
-  }
-
-  const rows = await prisma.$queryRawUnsafe<AdminWithPassword[]>(
-    'SELECT id, email, name, password FROM "Admin" WHERE email = ? LIMIT 1',
-    email
-  );
-  return rows[0] ?? null;
-}
-
 export async function POST(request: Request) {
   try {
+    async function findAdminByEmail(email: string): Promise<AdminWithPassword | null> {
+      const adminDelegate = (prisma as unknown as { admin?: { findUnique: Function } }).admin;
+      if (adminDelegate?.findUnique) {
+        const admin = await adminDelegate.findUnique({ where: { email } });
+        if (!admin) return null;
+        return {
+          id: admin.id,
+          email: admin.email,
+          name: admin.name,
+          password: admin.password,
+        };
+      }
+
+      const rows = await prisma.$queryRawUnsafe<AdminWithPassword[]>(
+        'SELECT id, email, name, password FROM "Admin" WHERE email = ? LIMIT 1',
+        email
+      );
+      return rows[0] ?? null;
+    }
+
     const { email, password } = await request.json();
     if (!email || !password) {
       return NextResponse.json(
