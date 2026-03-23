@@ -37,7 +37,8 @@ type Job = {
 type Props =
   | {
       mode: "create";
-      role: "admin";
+      role: "admin"; 
+      job?: any; 
       initial: { start: Date; end: Date };
       customers: CustomerLite[];
       onSave: (data: {
