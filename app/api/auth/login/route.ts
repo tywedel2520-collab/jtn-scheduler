@@ -15,7 +15,7 @@ type AdminWithPassword = {
 
 export async function POST(request: Request) {
   try {
-    const { createSession, findClientByEmail } = await import("@/lib/auth");
+    const { findClientByEmail } = await import("@/lib/auth");
     const { prisma } = await import("@/lib/db");
 
     async function findAdminByEmail(email: string): Promise<AdminWithPassword | null> {
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
       if (!admin.password) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
       const valid = await bcrypt.compare(password, admin.password);
       if (!valid) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
-      await createSession({ role: "admin", userId: admin.id });
+      // createSession temporarily disabled for debugging
       return NextResponse.json({ success: true, role: "admin" });
     }
 
@@ -60,13 +60,12 @@ export async function POST(request: Request) {
       if (!client.password) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
       const valid = await bcrypt.compare(password, client.password);
       if (!valid) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
-      await createSession({ role: "client", userId: client.id });
+      // createSession temporarily disabled for debugging
       return NextResponse.json({ success: true, role: "client" });
     }
 
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
     console.error("LOGIN ERROR:", error);
     return NextResponse.json(
       { error: "Server error", details: error instanceof Error ? error.message : String(error) },
