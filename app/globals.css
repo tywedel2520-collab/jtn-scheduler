@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-dm-sans: "DM Sans", system-ui, sans-serif;
+}
+
+body {
+  font-family: var(--font-dm-sans);
+  @apply bg-stone-100 text-stone-900;
+}
+
+/* React Big Calendar overrides */
+.rbc-calendar {
+  font-family: var(--font-dm-sans);
+}
+.rbc-toolbar {
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.rbc-toolbar button {
+  @apply px-4 py-2 rounded-lg font-medium transition-colors;
+  @apply bg-stone-100 text-stone-800 hover:bg-stone-200;
+}
+.rbc-toolbar button.rbc-active {
+  @apply bg-orange-600 text-white hover:bg-orange-700;
+}
+.rbc-event {
+  @apply bg-orange-600 border-orange-700;
+}
+.rbc-today {
+  @apply bg-orange-50/60;
+}
+.rbc-off-range-bg {
+  @apply bg-stone-100;
+}
