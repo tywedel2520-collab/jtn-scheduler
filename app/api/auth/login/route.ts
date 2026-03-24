@@ -47,7 +47,12 @@ export async function POST(request: Request) {
 
     // Temporary dev bypass
     if (email === "admin@test.com" && password === "test123") {
-      return NextResponse.json({ success: true, role: "admin" });
+      const devAdmin = await prisma.admin.findFirst();
+      if (devAdmin) {
+        const res = NextResponse.json({ success: true, role: "admin" });
+        setSessionOnResponse(res, { role: "admin", userId: devAdmin.id });
+        return res;
+      }
     }
 
     // Role is resolved server-side. Admin stays hidden in UI.
