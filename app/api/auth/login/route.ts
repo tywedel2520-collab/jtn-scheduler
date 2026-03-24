@@ -15,7 +15,7 @@ type AdminWithPassword = {
 
 export async function POST(request: Request) {
   try {
-    const { findClientByEmail } = await import("@/lib/auth");
+    const { setSessionOnResponse, findClientByEmail } = await import("@/lib/auth");
     const { prisma } = await import("@/lib/db");
 
     async function findAdminByEmail(email: string): Promise<AdminWithPassword | null> {
@@ -51,8 +51,9 @@ export async function POST(request: Request) {
       if (!admin.password) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
       const valid = await bcrypt.compare(password, admin.password);
       if (!valid) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
-      // createSession temporarily disabled for debugging
-      return NextResponse.json({ success: true, role: "admin" });
+      const res = NextResponse.json({ success: true, role: "admin" });
+      setSessionOnResponse(res, { role: "admin", userId: admin.id });
+      return res;
     }
 
     const client = await findClientByEmail(email);
@@ -60,8 +61,9 @@ export async function POST(request: Request) {
       if (!client.password) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
       const valid = await bcrypt.compare(password, client.password);
       if (!valid) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
-      // createSession temporarily disabled for debugging
-      return NextResponse.json({ success: true, role: "client" });
+      const res = NextResponse.json({ success: true, role: "client" });
+      setSessionOnResponse(res, { role: "client", userId: client.id });
+      return res;
     }
 
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });

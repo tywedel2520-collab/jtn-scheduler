@@ -36,7 +36,7 @@ export async function ensureClientAccountsTable() {
       "name" TEXT NOT NULL,
       "password" TEXT NOT NULL,
       "customerId" TEXT,
-      "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT now()
     )
   `);
 }
@@ -73,18 +73,30 @@ async function findAdminById(id: string): Promise<AdminRow | null> {
   }
 }
 
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax" as const,
+  maxAge: SESSION_MAX_AGE,
+  path: "/",
+};
+
+export function setSessionOnResponse(
+  response: { cookies: { set: (name: string, value: string, opts: object) => void } },
+  input: { role: Role; userId: string }
+) {
+  const sessionId = `${input.role}:${input.userId}:${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2)}`;
+  response.cookies.set(SESSION_COOKIE, sessionId, COOKIE_OPTIONS);
+}
+
 export async function createSession(input: { role: Role; userId: string }) {
   const sessionId = `${input.role}:${input.userId}:${Date.now()}-${Math.random()
     .toString(36)
     .slice(2)}`;
   const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE, sessionId, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: SESSION_MAX_AGE,
-    path: "/",
-  });
+  cookieStore.set(SESSION_COOKIE, sessionId, COOKIE_OPTIONS);
 }
 
 export async function getCurrentUser(): Promise<CurrentUser | null> {
@@ -121,6 +133,12 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   }
 
   return null;
+}
+
+export function deleteSessionFromResponse(
+  response: { cookies: { delete: (name: string) => void } }
+) {
+  response.cookies.delete(SESSION_COOKIE);
 }
 
 export async function deleteSession() {

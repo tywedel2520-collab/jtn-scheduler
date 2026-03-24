@@ -14,11 +14,11 @@ async function main() {
       "name" TEXT NOT NULL,
       "password" TEXT NOT NULL,
       "customerId" TEXT,
-      "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT now()
     )
   `);
   await prisma.$executeRawUnsafe('DELETE FROM "ClientAccount"');
-  await prisma.admin.deleteMany({ where: { email: { not: "admin@example.com" } } });
+  await prisma.admin.deleteMany({});
 
   const adminPassword = await bcrypt.hash("admin123", 10);
   const admin = await prisma.admin.upsert({

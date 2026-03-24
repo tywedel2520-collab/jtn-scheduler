@@ -8,7 +8,7 @@ import { randomUUID } from "crypto";
 export async function POST(request: Request) {
   try {
     const { prisma } = await import("@/lib/db");
-    const { createSession, ensureClientAccountsTable, findClientByEmail } = await import("@/lib/auth");
+    const { setSessionOnResponse, ensureClientAccountsTable, findClientByEmail } = await import("@/lib/auth");
 
     const { name, email, password } = await request.json();
     if (!name || !email || !password) {
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     }
 
     const existingAdmin = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
-      'SELECT id FROM "Admin" WHERE email = ? LIMIT 1',
+      'SELECT id FROM "Admin" WHERE email = $1 LIMIT 1',
       email
     );
     if (existingAdmin[0]) {
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
     const hashed = await bcrypt.hash(password, 10);
     const id = randomUUID();
     await prisma.$executeRawUnsafe(
-      'INSERT INTO "ClientAccount" (id, email, name, password, customerId) VALUES (?, ?, ?, ?, ?)',
+      'INSERT INTO "ClientAccount" (id, email, name, password, "customerId") VALUES ($1, $2, $3, $4, $5)',
       id,
       email,
       name,
@@ -50,10 +50,16 @@ export async function POST(request: Request) {
       customer.id
     );
 
-    await createSession({ role: "client", userId: id });
-    return NextResponse.json({ success: true, role: "client" });
-  } catch {
-    return NextResponse.json({ error: "Signup failed" }, { status: 500 });
+    const res = NextResponse.json({ success: true, role: "client" });
+    setSessionOnResponse(res, { role: "client", userId: id });
+    return res;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("SIGNUP ERROR:", err);
+    return NextResponse.json(
+      { error: "Signup failed", details: message },
+      { status: 500 }
+    );
   }
 }
 
