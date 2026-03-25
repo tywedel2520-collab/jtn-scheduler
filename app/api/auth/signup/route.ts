@@ -8,7 +8,7 @@ import { randomUUID } from "crypto";
 export async function POST(request: Request) {
   try {
     const { prisma } = await import("@/lib/db");
-    const { setSessionOnResponse, ensureClientAccountsTable, findClientByEmail } = await import("@/lib/auth");
+    const { createSession, ensureClientAccountsTable, findClientByEmail } = await import("@/lib/auth");
 
     const { name, email, password } = await request.json();
     if (!name || !email || !password) {
@@ -50,14 +50,13 @@ export async function POST(request: Request) {
       customer.id
     );
 
-    const res = NextResponse.json({ success: true, role: "client" });
-    setSessionOnResponse(res, { role: "client", userId: id });
-    return res;
+    await createSession({ role: "client", userId: id });
+    return NextResponse.json({ success: true, role: "client" });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("SIGNUP ERROR:", err);
     return NextResponse.json(
-      { error: "Signup failed", details: message },
+      { error: "Signup failed", details: message || "Unknown signup error" },
       { status: 500 }
     );
   }
