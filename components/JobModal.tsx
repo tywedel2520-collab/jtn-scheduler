@@ -314,8 +314,8 @@ export default function JobModal(props: Props) {
     (mode === "edit" || customerQuery.trim().length > 0);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-md rounded-2xl bg-white shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-4">
+      <div className="w-full max-w-md max-w-full rounded-2xl bg-white shadow-xl">
         <div className="flex items-center justify-between p-4 border-b border-stone-200">
           <h2 className="text-lg font-semibold">
             {mode === "create" ? "New Job" : "Edit Job"}
@@ -325,7 +325,7 @@ export default function JobModal(props: Props) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+        <form onSubmit={handleSubmit} className="p-2 sm:p-4 space-y-4">
           {mode === "edit" && isAdmin && (
             <div className="rounded-xl border border-stone-200 bg-stone-50 p-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
@@ -463,7 +463,7 @@ export default function JobModal(props: Props) {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-stone-700 mb-1">
                     Estimated timeframe
@@ -490,7 +490,7 @@ export default function JobModal(props: Props) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-stone-700 mb-1">Start</label>
                   <input
@@ -620,11 +620,11 @@ export default function JobModal(props: Props) {
             </p>
           )}
 
-          <div className="flex gap-2 pt-2">
+          <div className="flex flex-col sm:flex-row gap-2 pt-2">
             <button
               type="submit"
               disabled={!canSubmit}
-              className="flex-1 py-2.5 rounded-lg bg-amber-600 text-white font-medium hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full sm:flex-1 py-2.5 rounded-lg bg-amber-600 text-white font-medium hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {saving ? "Saving..." : mode === "create" ? "Create" : "Save"}
             </button>
@@ -634,7 +634,7 @@ export default function JobModal(props: Props) {
                 type="button"
                 onClick={handleDelete}
                 disabled={saving}
-                className="px-4 py-2.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50"
+                className="w-full sm:w-auto px-4 py-2.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50"
               >
                 Delete
               </button>
@@ -643,7 +643,7 @@ export default function JobModal(props: Props) {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-lg border border-stone-200 hover:bg-stone-50"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-lg border border-stone-200 hover:bg-stone-50"
             >
               Cancel
             </button>

@@ -65,8 +65,8 @@ export default function CustomerModal(props: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-md rounded-2xl bg-white shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-4">
+      <div className="w-full max-w-md max-w-full rounded-2xl bg-white shadow-xl">
         <div className="flex items-center justify-between p-4 border-b border-stone-200">
           <h2 className="text-lg font-semibold">
             {mode === "create" ? "Add Customer" : "Edit Customer"}
@@ -78,7 +78,7 @@ export default function CustomerModal(props: Props) {
             <X size={20} />
           </button>
         </div>
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+        <form onSubmit={handleSubmit} className="p-2 sm:p-4 space-y-4">
           <div>
             <label className="block text-sm font-medium text-stone-700 mb-1">Name</label>
             <input
@@ -116,18 +116,18 @@ export default function CustomerModal(props: Props) {
               className="w-full px-4 py-2 rounded-lg border border-stone-200 focus:ring-2 focus:ring-amber-500 outline-none"
             />
           </div>
-          <div className="flex gap-2 pt-2">
+          <div className="flex flex-col sm:flex-row gap-2 pt-2">
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 py-2.5 rounded-lg bg-amber-600 text-white font-medium hover:bg-amber-700 disabled:opacity-50"
+              className="w-full sm:flex-1 py-2.5 rounded-lg bg-amber-600 text-white font-medium hover:bg-amber-700 disabled:opacity-50"
             >
               {saving ? "Saving..." : mode === "create" ? "Create" : "Save"}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-lg border border-stone-200 hover:bg-stone-50"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-lg border border-stone-200 hover:bg-stone-50"
             >
               Cancel
             </button>

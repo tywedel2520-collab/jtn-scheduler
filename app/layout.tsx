@@ -19,7 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={dmSans.variable}>
-      <body className="min-h-screen bg-stone-50 font-sans antialiased">
+      <body className="min-h-screen bg-stone-50 font-sans antialiased overflow-x-hidden">
         {children}
       </body>
     </html>
