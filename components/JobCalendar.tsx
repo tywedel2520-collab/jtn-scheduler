@@ -202,19 +202,17 @@ export default function JobCalendar() {
           </button>
         </div>
       </div>
-      <div className="h-[600px] w-full max-w-full overflow-x-auto rounded-xl border border-stone-200 bg-white p-2 sm:p-4 shadow-sm min-w-0">
-        <div className="min-w-0">
-          <Calendar
-            localizer={localizer}
-            events={events}
-            startAccessor="start"
-            endAccessor="end"
-            style={{ height: "100%", width: "100%" }}
-            selectable
-            onSelectSlot={(slot) => openCreateModal({ start: slot.start, end: slot.end })}
-            onSelectEvent={(event) => setSelectedEvent(event as unknown as Job)}
-          />
-        </div>
+      <div className="h-[600px] w-full max-w-full overflow-x-auto overflow-y-auto box-border rounded-xl border border-stone-200 bg-white p-2 sm:p-4 shadow-sm">
+        <Calendar
+          localizer={localizer}
+          events={events}
+          startAccessor="start"
+          endAccessor="end"
+          style={{ height: "100%", width: "100%" }}
+          selectable
+          onSelectSlot={(slot) => openCreateModal({ start: slot.start, end: slot.end })}
+          onSelectEvent={(event) => setSelectedEvent(event as unknown as Job)}
+        />
       </div>
 
       {selectedSlot && (
