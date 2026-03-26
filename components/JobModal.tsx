@@ -209,8 +209,10 @@ export default function JobModal(props: Props) {
           const createdCustomer = await createRes.json().catch(() => null);
           if (!createRes.ok || !createdCustomer?.id) {
             setError(
-              createdCustomer?.error ||
-                "Could not create customer. Please check the customer details."
+              createdCustomer?.details
+                ? `${createdCustomer?.error || "Could not create customer"}: ${createdCustomer.details}`
+                : createdCustomer?.error ||
+                  "Could not create customer. Please check the customer details."
             );
             return;
           }
