@@ -5,7 +5,6 @@ import { NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 
 function generateShareToken() {
-  // Long random URL-safe token (base64url-ish)
   return randomBytes(32)
     .toString("base64")
     .replace(/\+/g, "-")
@@ -13,95 +12,139 @@ function generateShareToken() {
     .replace(/=+$/g, "");
 }
 
+function jsonError(status: number, error: string, details?: string) {
+  return NextResponse.json(
+    { error, ...(details ? { details } : {}) },
+    { status }
+  );
+}
+
+function errMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> | { id: string } }
 ) {
-  const { getCurrentUser } = await import("@/lib/auth");
-  const { prisma } = await import("@/lib/db");
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (user.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  try {
+    const { getCurrentUser } = await import("@/lib/auth");
+    const { prisma } = await import("@/lib/db");
+    const user = await getCurrentUser();
+    if (!user) return jsonError(401, "Unauthorized");
+    if (user.role !== "admin") return jsonError(403, "Forbidden");
 
-  const { id } = await params;
-  const body = await request.json();
-  const action = body?.action as "generate" | "regenerate";
+    const { id } = await Promise.resolve(context.params);
 
-  if (action !== "generate" && action !== "regenerate") {
-    return NextResponse.json({ error: "Invalid action" }, { status: 400 });
-  }
-
-  const existing = await prisma.$queryRawUnsafe<{ shareToken: string | null }[]>(
-    'SELECT "shareToken" as "shareToken" FROM "Job" WHERE "id" = ? LIMIT 1',
-    id
-  );
-
-  if (!existing[0]) return NextResponse.json({ error: "Job not found" }, { status: 404 });
-
-  const currentToken = existing[0].shareToken;
-
-  // Generate: keep existing token if already present.
-  if (action === "generate" && currentToken) return NextResponse.json({ shareToken: currentToken });
-
-  // Regenerate: always replace with a new token.
-  // Token collision is extremely unlikely, but we retry a few times.
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const token = generateShareToken();
+    let body: { action?: string };
     try {
-      await prisma.$executeRawUnsafe(
-        'UPDATE "Job" SET "shareToken" = ? WHERE "id" = ?',
-        token,
-        id
-      );
-      return NextResponse.json({ shareToken: token });
+      body = await request.json();
     } catch {
-      // If collision happens, retry.
+      return jsonError(400, "Invalid JSON body");
     }
-  }
 
-  return NextResponse.json({ error: "Could not generate token" }, { status: 500 });
+    const action = body?.action as "generate" | "regenerate" | undefined;
+    if (action !== "generate" && action !== "regenerate") {
+      return jsonError(400, "Invalid action", 'Use "generate" or "regenerate".');
+    }
+
+    const existing = await prisma.job.findUnique({
+      where: { id },
+      select: { id: true, shareToken: true },
+    });
+
+    if (!existing) return jsonError(404, "Job not found");
+
+    const currentToken = existing.shareToken;
+
+    const respondWithToken = (shareToken: string) => {
+      const clientPath = `/client/${encodeURIComponent(shareToken)}`;
+      return NextResponse.json({
+        shareToken,
+        clientPath,
+        clientUrl: clientPath,
+      });
+    };
+
+    if (action === "generate" && currentToken) {
+      return respondWithToken(currentToken);
+    }
+
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const token = generateShareToken();
+      try {
+        await prisma.job.update({
+          where: { id },
+          data: { shareToken: token },
+          select: { id: true },
+        });
+        return respondWithToken(token);
+      } catch (err: unknown) {
+        const code = typeof err === "object" && err && "code" in err ? (err as { code?: string }).code : undefined;
+        if (code === "P2002") continue;
+        console.error("JOB SHARE TOKEN UPDATE:", err);
+        return jsonError(500, "Could not save share token", errMessage(err));
+      }
+    }
+
+    return jsonError(500, "Could not generate token", "Unique token collision after retries.");
+  } catch (err: unknown) {
+    console.error("JOB SHARE POST:", err);
+    return jsonError(500, "Share link update failed", errMessage(err));
+  }
 }
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> | { id: string } }
 ) {
-  const { getCurrentUser } = await import("@/lib/auth");
-  const { prisma } = await import("@/lib/db");
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (user.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  try {
+    const { getCurrentUser } = await import("@/lib/auth");
+    const { prisma } = await import("@/lib/db");
+    const user = await getCurrentUser();
+    if (!user) return jsonError(401, "Unauthorized");
+    if (user.role !== "admin") return jsonError(403, "Forbidden");
 
-  const { id } = await params;
-  const existing = await prisma.$queryRawUnsafe<{ id: string }[]>(
-    'SELECT "id" FROM "Job" WHERE "id" = ? LIMIT 1',
-    id
-  );
+    const { id } = await Promise.resolve(context.params);
+    const existing = await prisma.job.findUnique({ where: { id }, select: { id: true } });
+    if (!existing) return jsonError(404, "Job not found");
 
-  if (!existing[0]) return NextResponse.json({ error: "Job not found" }, { status: 404 });
+    await prisma.job.update({
+      where: { id },
+      data: { shareToken: null },
+      select: { id: true },
+    });
 
-  await prisma.$executeRawUnsafe('UPDATE "Job" SET "shareToken" = NULL WHERE "id" = ?', id);
-
-  return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true });
+  } catch (err: unknown) {
+    console.error("JOB SHARE DELETE:", err);
+    return jsonError(500, "Could not revoke share link", errMessage(err));
+  }
 }
 
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> | { id: string } }
 ) {
-  const { getCurrentUser } = await import("@/lib/auth");
-  const { prisma } = await import("@/lib/db");
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (user.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  try {
+    const { getCurrentUser } = await import("@/lib/auth");
+    const { prisma } = await import("@/lib/db");
+    const user = await getCurrentUser();
+    if (!user) return jsonError(401, "Unauthorized");
+    if (user.role !== "admin") return jsonError(403, "Forbidden");
 
-  const { id } = await params;
-  const rows = await prisma.$queryRawUnsafe<{ shareToken: string | null }[]>(
-    'SELECT "shareToken" as "shareToken" FROM "Job" WHERE "id" = ? LIMIT 1',
-    id
-  );
+    const { id } = await Promise.resolve(context.params);
+    const job = await prisma.job.findUnique({
+      where: { id },
+      select: { shareToken: true },
+    });
+    if (!job) return jsonError(404, "Job not found");
 
-  if (!rows[0]) return NextResponse.json({ error: "Job not found" }, { status: 404 });
-  return NextResponse.json({ shareToken: rows[0].shareToken ?? null });
+    const shareToken = job.shareToken ?? null;
+    const clientPath = shareToken ? `/client/${encodeURIComponent(shareToken)}` : null;
+    return NextResponse.json({ shareToken, clientPath, clientUrl: clientPath });
+  } catch (err: unknown) {
+    console.error("JOB SHARE GET:", err);
+    return jsonError(500, "Could not load share link", errMessage(err));
+  }
 }
-

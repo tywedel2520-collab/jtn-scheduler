@@ -52,7 +52,7 @@ export default async function ClientPage() {
       customerName: string;
     }>
   >(
-    'SELECT j."id", j."title", j."startDate", j."endDate", j."status", j."checklist", c."name" as "customerName" FROM "Job" j JOIN "Customer" c ON c."id" = j."customerId" WHERE j."customerId" = ? ORDER BY j."startDate" ASC LIMIT 1',
+    'SELECT j."id", j."title", j."startDate", j."endDate", j."status", j."checklist", c."name" as "customerName" FROM "Job" j JOIN "Customer" c ON c."id" = j."customerId" WHERE j."customerId" = $1 ORDER BY j."startDate" ASC LIMIT 1',
     user.customerId
   );
 

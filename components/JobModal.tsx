@@ -97,6 +97,15 @@ export default function JobModal(props: Props) {
   const role = props.role;
   const isAdmin = role === "admin";
 
+  // Prevent background page scroll while modal is open (mobile UX).
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, []);
+
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -156,14 +165,18 @@ export default function JobModal(props: Props) {
     return null;
   });
 
+  function clientLinkPath(token: string) {
+    return `/client/${encodeURIComponent(token)}`;
+  }
+
   useEffect(() => {
-    // Even if the current Prisma client doesn't include the new shareToken field (schema sync issues),
-    // we can always fetch the active token from the server endpoint.
     if (mode !== "edit" || !isAdmin) return;
     async function loadShareToken() {
       const res = await fetch(`/api/jobs/${props.job?.id}/share`);
       if (!res.ok) return;
-      const data = (await res.json().catch(() => ({}))) as { shareToken?: string | null };
+      const data = (await res.json().catch(() => ({}))) as {
+        shareToken?: string | null;
+      };
       if (data.shareToken !== undefined) setShareTokenState(data.shareToken);
     }
     loadShareToken();
@@ -284,9 +297,17 @@ export default function JobModal(props: Props) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action }),
     });
-    const data = await res.json().catch(() => ({}));
+    const data = await res.json().catch(() => ({})) as {
+      error?: string;
+      details?: string;
+      shareToken?: string | null;
+    };
     if (!res.ok) {
-      setError(data.error || "Failed to update client link.");
+      setError(
+        data.details
+          ? `${data.error || "Failed to update client link"}: ${data.details}`
+          : data.error || "Failed to update client link."
+      );
       return;
     }
     setShareTokenState(data.shareToken ?? null);
@@ -297,9 +318,16 @@ export default function JobModal(props: Props) {
     if (!confirm("Revoke this client link? The previous link will stop working.")) return;
     setError("");
     const res = await fetch(`/api/jobs/${props.job.id}/share`, { method: "DELETE" });
-    const data = await res.json().catch(() => ({}));
+    const data = await res.json().catch(() => ({})) as {
+      error?: string;
+      details?: string;
+    };
     if (!res.ok) {
-      setError(data.error || "Failed to revoke client link.");
+      setError(
+        data.details
+          ? `${data.error || "Failed to revoke client link"}: ${data.details}`
+          : data.error || "Failed to revoke client link."
+      );
       return;
     }
     setShareTokenState(null);
@@ -307,7 +335,7 @@ export default function JobModal(props: Props) {
 
   async function handleCopyShareLink() {
     if (!shareTokenState) return;
-    const url = `${window.location.origin}/share/${shareTokenState}`;
+    const url = `${window.location.origin}${clientLinkPath(shareTokenState)}`;
     await navigator.clipboard.writeText(url);
   }
 
@@ -316,18 +344,24 @@ export default function JobModal(props: Props) {
     (mode === "edit" || customerQuery.trim().length > 0);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-4">
-      <div className="w-full max-w-md max-w-full rounded-2xl bg-white shadow-xl">
-        <div className="flex items-center justify-between p-4 border-b border-stone-200">
-          <h2 className="text-lg font-semibold">
-            {mode === "create" ? "New Job" : "Edit Job"}
-          </h2>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-stone-100 transition">
-            <X size={20} />
-          </button>
+    <div className="fixed inset-0 z-50 bg-black/50 p-2 sm:p-4">
+      <div className="mx-auto h-[calc(100dvh-1rem)] sm:h-auto sm:max-h-[calc(100dvh-2rem)] w-full max-w-md rounded-2xl bg-white shadow-xl flex flex-col overflow-hidden">
+        <div className="sticky top-0 z-10 bg-white border-b border-stone-200">
+          <div className="flex items-center justify-between px-4 py-3">
+            <h2 className="text-lg font-semibold">
+              {mode === "create" ? "New Job" : "Edit Job"}
+            </h2>
+            <button
+              onClick={onClose}
+              className="p-3 -mr-2 rounded-xl hover:bg-stone-100 transition"
+              aria-label="Close"
+            >
+              <X size={22} />
+            </button>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-2 sm:p-4 space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-3 sm:px-4 py-3 space-y-4">
           {mode === "edit" && isAdmin && (
             <div className="rounded-xl border border-stone-200 bg-stone-50 p-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
@@ -573,7 +607,7 @@ export default function JobModal(props: Props) {
               {shareTokenState ? (
                 <>
                   <p className="text-xs text-stone-600 mt-1 break-all">
-                    {`${window.location.origin}/share/${shareTokenState}`}
+                    {`${window.location.origin}${clientLinkPath(shareTokenState)}`}
                   </p>
                   <div className="mt-3 flex gap-2">
                     <button
@@ -622,11 +656,12 @@ export default function JobModal(props: Props) {
             </p>
           )}
 
-          <div className="flex flex-col sm:flex-row gap-2 pt-2">
+          <div className="sticky bottom-0 bg-white border-t border-stone-200 px-3 sm:px-4 py-3">
+            <div className="flex flex-col sm:flex-row gap-2">
             <button
               type="submit"
               disabled={!canSubmit}
-              className="w-full sm:flex-1 py-2.5 rounded-lg bg-amber-600 text-white font-medium hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full sm:flex-1 py-3 rounded-xl bg-amber-600 text-white font-semibold hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {saving ? "Saving..." : mode === "create" ? "Create" : "Save"}
             </button>
@@ -636,7 +671,7 @@ export default function JobModal(props: Props) {
                 type="button"
                 onClick={handleDelete}
                 disabled={saving}
-                className="w-full sm:w-auto px-4 py-2.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50"
+                className="w-full sm:w-auto px-4 py-3 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50"
               >
                 Delete
               </button>
@@ -645,10 +680,11 @@ export default function JobModal(props: Props) {
             <button
               type="button"
               onClick={onClose}
-              className="w-full sm:w-auto px-4 py-2.5 rounded-lg border border-stone-200 hover:bg-stone-50"
+              className="w-full sm:w-auto px-4 py-3 rounded-xl border border-stone-200 hover:bg-stone-50"
             >
               Cancel
             </button>
+            </div>
           </div>
         </form>
       </div>

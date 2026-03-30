@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X } from "lucide-react";
+import { useEffect } from "react";
 
 type Customer = {
   id: string;
@@ -34,6 +35,13 @@ type Props =
 
 export default function CustomerModal(props: Props) {
   const { mode, onClose } = props;
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, []);
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState(mode === "edit" ? props.customer.name : "");
   const [email, setEmail] = useState(
@@ -65,20 +73,23 @@ export default function CustomerModal(props: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-4">
-      <div className="w-full max-w-md max-w-full rounded-2xl bg-white shadow-xl">
-        <div className="flex items-center justify-between p-4 border-b border-stone-200">
-          <h2 className="text-lg font-semibold">
-            {mode === "create" ? "Add Customer" : "Edit Customer"}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg hover:bg-stone-100 transition"
-          >
-            <X size={20} />
-          </button>
+    <div className="fixed inset-0 z-50 bg-black/50 p-2 sm:p-4">
+      <div className="mx-auto h-[calc(100dvh-1rem)] sm:h-auto sm:max-h-[calc(100dvh-2rem)] w-full max-w-md rounded-2xl bg-white shadow-xl flex flex-col overflow-hidden">
+        <div className="sticky top-0 z-10 bg-white border-b border-stone-200">
+          <div className="flex items-center justify-between px-4 py-3">
+            <h2 className="text-lg font-semibold">
+              {mode === "create" ? "Add Customer" : "Edit Customer"}
+            </h2>
+            <button
+              onClick={onClose}
+              className="p-3 -mr-2 rounded-xl hover:bg-stone-100 transition"
+              aria-label="Close"
+            >
+              <X size={22} />
+            </button>
+          </div>
         </div>
-        <form onSubmit={handleSubmit} className="p-2 sm:p-4 space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-3 sm:px-4 py-3 space-y-4">
           <div>
             <label className="block text-sm font-medium text-stone-700 mb-1">Name</label>
             <input
@@ -116,21 +127,23 @@ export default function CustomerModal(props: Props) {
               className="w-full px-4 py-2 rounded-lg border border-stone-200 focus:ring-2 focus:ring-amber-500 outline-none"
             />
           </div>
-          <div className="flex flex-col sm:flex-row gap-2 pt-2">
+          <div className="sticky bottom-0 bg-white border-t border-stone-200 px-3 sm:px-4 py-3">
+            <div className="flex flex-col sm:flex-row gap-2">
             <button
               type="submit"
               disabled={saving}
-              className="w-full sm:flex-1 py-2.5 rounded-lg bg-amber-600 text-white font-medium hover:bg-amber-700 disabled:opacity-50"
+              className="w-full sm:flex-1 py-3 rounded-xl bg-amber-600 text-white font-semibold hover:bg-amber-700 disabled:opacity-50"
             >
               {saving ? "Saving..." : mode === "create" ? "Create" : "Save"}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="w-full sm:w-auto px-4 py-2.5 rounded-lg border border-stone-200 hover:bg-stone-50"
+              className="w-full sm:w-auto px-4 py-3 rounded-xl border border-stone-200 hover:bg-stone-50"
             >
               Cancel
             </button>
+            </div>
           </div>
         </form>
       </div>
