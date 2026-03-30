@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="JTN Scheduler">
+  <!-- Maskable safe zone: content centered in inner ~70% (Android adaptive icons) -->
+  <rect width="512" height="512" fill="#ea580c"/>
+  <rect x="64" y="64" width="384" height="384" fill="#ea580c" rx="72"/>
+  <text x="256" y="300" text-anchor="middle" font-family="ui-sans-serif,system-ui,sans-serif" font-size="120" font-weight="700" fill="#ffffff">JTN</text>
+</svg>
